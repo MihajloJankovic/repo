@@ -1,5 +1,4 @@
-variables: 
-- group: AzureResourcesVariableGroup
+
    
 trigger:
 - main
