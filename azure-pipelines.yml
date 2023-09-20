@@ -1,0 +1,77 @@
+variables: 
+- group: AzureResourcesVariableGroup
+   
+trigger:
+- main
+
+stages:
+- stage: Build
+  jobs: 
+  - job: Build
+
+    pool:
+      vmImage: 'windows-latest'
+
+    variables:
+      solution: '**/*.sln'
+      buildPlatform: 'Any CPU'
+      buildConfiguration: 'Release'      
+
+    steps:
+    - task: NuGetToolInstaller@1
+
+    - task: NuGetCommand@2
+      inputs:
+        restoreSolution: '$(solution)'
+
+    - task: VSBuild@1
+      inputs:
+        solution: '$(solution)'
+        msbuildArgs: '/p:DeployOnBuild=true /p:WebPublishMethod=Package /p:PackageAsSingleFile=true /p:SkipInvalidConfigurations=true /p:DesktopBuildPackageLocation="$(build.artifactStagingDirectory)\WebApp.zip" /p:DeployIisAppPath="Default Web Site"'
+        platform: '$(buildPlatform)'
+        configuration: '$(buildConfiguration)'
+        
+    - task: PublishBuildArtifacts@1
+      inputs:
+        PathtoPublish: '$(Build.ArtifactStagingDirectory)'
+        ArtifactName: 'drop'
+        publishLocation: 'Container'  
+    
+- stage: DeployAzureResources
+  displayName: 'Deploy resources to Azure'
+  dependsOn: Build
+  condition: |
+    succeeded()    
+  jobs: 
+  - job: DeployAzureResources
+    pool: 
+      vmImage: 'windows-latest'
+
+
+- stage: DeployWebApp
+  displayName: 'Deploy the web app'
+  dependsOn: DeployAzureResources
+  condition: |
+    succeeded()    
+  
+  jobs: 
+  - job: DeployWebApp
+    displayName: 'Deploy Web App'
+    pool: 
+      vmImage: 'windows-latest'
+    
+    steps:
+      
+    - task: DownloadBuildArtifacts@0
+      inputs:
+        buildType: 'current'
+        downloadType: 'single'
+        artifactName: 'drop'
+        downloadPath: '$(System.DefaultWorkingDirectory)'
+    - task: AzureRmWebAppDeployment@4
+      inputs:
+        ConnectionType: 'AzureRM'
+        azureSubscription: $(AZURESUBSCRIPTION)
+        appType: 'webApp'
+        WebAppName: 'WebApp'
+        packageForLinux: '$(System.DefaultWorkingDirectory)/**/*.zip'
