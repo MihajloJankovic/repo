@@ -34,24 +34,9 @@ stages:
         PathtoPublish: '$(Build.ArtifactStagingDirectory)'
         ArtifactName: 'drop'
         publishLocation: 'Container'  
-    
-- stage: DeployAzureResources
-  displayName: 'Deploy resources to Azure'
-  dependsOn: Build
-  condition: |
-    succeeded()    
-  jobs: 
-  - job: DeployAzureResources
-    pool: 
-      vmImage: 'windows-latest'
-
 
 - stage: DeployWebApp
   displayName: 'Deploy the web app'
-  dependsOn: DeployAzureResources
-  condition: |
-    succeeded()    
-  
   jobs: 
   - job: DeployWebApp
     displayName: 'Deploy Web App'
