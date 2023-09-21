@@ -55,5 +55,5 @@ stages:
       inputs:
         azureSubscription: 'Levi9Internship2023(8b647a0d-1416-458d-9321-8f3214f43068)'
         appType: 'webApp'
-        appName: 'WebApp'
+        appName: 'CleanPaySystem'
         package: '$(System.DefaultWorkingDirectory)/**/*.zip'
